@@ -222,6 +222,22 @@ function getFlagUrl(code) {
 
 // ─── STATE ──────────────────────────────────────────────────
 
+// Load unlocked flags from localStorage
+function loadUnlockedFlags() {
+  try {
+    const saved = localStorage.getItem('quiz_unlocked_flags');
+    return saved ? JSON.parse(saved) : [];
+  } catch (e) {
+    return [];
+  }
+}
+
+function saveUnlockedFlags() {
+  try {
+    localStorage.setItem('quiz_unlocked_flags', JSON.stringify(state.unlockedFlags));
+  } catch (e) { /* noop */ }
+}
+
 let state = {
   mode: 'flags',        // 'flags' | 'shields' | 'trivia'
   questions: [],
@@ -233,7 +249,8 @@ let state = {
   timerInterval: null,
   answered: false,
   responseTimes: [],
-  questionStartTime: 0
+  questionStartTime: 0,
+  unlockedFlags: loadUnlockedFlags()
 };
 
 // ─── DOM ELEMENTS ───────────────────────────────────────────
@@ -244,10 +261,15 @@ const $$ = (sel) => document.querySelectorAll(sel);
 const screenStart = $('#screen-start');
 const screenQuiz = $('#screen-quiz');
 const screenResults = $('#screen-results');
+const screenAlbum = $('#screen-album');
 
 const btnStart = $('#btn-start');
 const btnRestart = $('#btn-restart');
 const btnShare = $('#btn-share');
+const btnAlbum = $('#btn-album');
+const btnAlbumBack = $('#btn-album-back');
+const albumGrid = $('#album-grid');
+const albumProgress = $('#album-progress');
 const modeBtns = $$('.mode-btn');
 
 const questionCounter = $('#question-counter');
@@ -497,6 +519,12 @@ function handleAnswer(answer, btnEl) {
   if (isCorrect) {
     state.score++;
     btnEl.classList.add('correct');
+
+    // Unlock flag in album
+    if (q.type === 'flag' && q.flagCode && !state.unlockedFlags.includes(q.flagCode)) {
+      state.unlockedFlags.push(q.flagCode);
+      saveUnlockedFlags();
+    }
   } else {
     btnEl.classList.add('wrong');
     // Show correct
@@ -887,4 +915,80 @@ function preloadFlags() {
 
 preloadFlags();
 
+// ─── ALBUM ──────────────────────────────────────────────────
 
+function renderAlbum() {
+  albumGrid.innerHTML = '';
+
+  // Group flags by World Cup group
+  const groups = {};
+  FLAGS_DATA.forEach(f => {
+    if (!groups[f.group]) groups[f.group] = [];
+    groups[f.group].push(f);
+  });
+
+  // Sort group keys alphabetically (A, B, C...)
+  const sortedGroups = Object.keys(groups).sort();
+
+  let totalUnlocked = 0;
+
+  sortedGroups.forEach(groupKey => {
+    // Group label
+    const label = document.createElement('div');
+    label.className = 'sticker-group-label';
+    label.textContent = `Grupo ${groupKey}`;
+    albumGrid.appendChild(label);
+
+    // Sort countries in each group alphabetically by name
+    const sortedCountries = groups[groupKey].sort((a, b) => a.name.localeCompare(b.name, 'pt-BR'));
+
+    sortedCountries.forEach(flag => {
+      const isUnlocked = state.unlockedFlags.includes(flag.code);
+      if (isUnlocked) totalUnlocked++;
+
+      const item = document.createElement('div');
+      item.className = `sticker-item${isUnlocked ? ' unlocked' : ''}`;
+
+      const box = document.createElement('div');
+      box.className = 'sticker-box';
+
+      if (isUnlocked) {
+        const img = document.createElement('img');
+        img.src = getFlagUrl(flag.code);
+        img.alt = flag.name;
+        img.loading = 'lazy';
+        if (flag.bgColor) box.style.backgroundColor = flag.bgColor;
+        if (flag.objectFit) img.style.objectFit = flag.objectFit;
+        if (flag.position) img.style.objectPosition = flag.position;
+        if (flag.scale) img.style.transform = `scale(${flag.scale})`;
+        box.appendChild(img);
+      } else {
+        const placeholder = document.createElement('span');
+        placeholder.className = 'sticker-placeholder';
+        placeholder.textContent = '?';
+        box.appendChild(placeholder);
+      }
+
+      const name = document.createElement('span');
+      name.className = 'sticker-name';
+      name.textContent = flag.name;
+
+      item.appendChild(box);
+      item.appendChild(name);
+      albumGrid.appendChild(item);
+    });
+  });
+
+  // Update progress counter
+  albumProgress.textContent = `${totalUnlocked}/${FLAGS_DATA.length} figurinhas`;
+}
+
+// Album navigation
+btnAlbum.addEventListener('click', () => {
+  renderAlbum();
+  showScreen(screenAlbum);
+});
+
+btnAlbumBack.addEventListener('click', () => {
+  showScreen(screenStart);
+});
