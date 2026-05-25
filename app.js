@@ -44,7 +44,7 @@ const FLAGS_DATA = [
   // ── Grupo G ──
   { code: "be", name: "Bélgica", group: "G", difficulty: 2 },
   { code: "eg", name: "Egito", group: "G", difficulty: 2 },
-  { code: "ir", name: "RI do Irã", group: "G", difficulty: 3 },
+  { code: "ir", name: "Irã", group: "G", difficulty: 3 },
   { code: "nz", name: "Nova Zelândia", group: "G", difficulty: 3, position: 'left top', bgColor: '#012169', objectFit: 'contain', scale: 0.99 },
 
   // ── Grupo H ──
@@ -989,3 +989,28 @@ btnAlbum.addEventListener('click', () => {
 btnAlbumBack.addEventListener('click', () => {
   showScreen(screenStart);
 });
+
+// ─── ROTATING TEXTS ─────────────────────────────────────────
+
+const startTexts = ["Começar", "Start", "Empezar", "Commencer", "Beginnen", "Starten", "始める"];
+const albumTexts = ["Salão das bandeiras", "Hall of flags", "Salón de banderas", "Salle des drapeaux", "Vlaggenzaal", "Saal der Flaggen", "旗のホール"];
+
+let rotateIndex = 0;
+const btnStartText = btnStart.querySelector('.btn-text');
+const btnAlbumText = btnAlbum.querySelector('.btn-text');
+
+if (btnStartText && btnAlbumText) {
+  setInterval(() => {
+    btnStartText.style.opacity = '0';
+    btnAlbumText.style.opacity = '0';
+    
+    setTimeout(() => {
+      rotateIndex = (rotateIndex + 1) % startTexts.length;
+      btnStartText.textContent = startTexts[rotateIndex];
+      btnAlbumText.textContent = albumTexts[rotateIndex];
+      
+      btnStartText.style.opacity = '1';
+      btnAlbumText.style.opacity = '1';
+    }, 300); // Wait for fade out
+  }, 2500); // Rotate every 2.5 seconds
+}
