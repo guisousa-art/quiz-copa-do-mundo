@@ -329,10 +329,19 @@ function showScreen(screen) {
 // ─── QUESTION GENERATION ────────────────────────────────────
 
 function generateFlagQuestions() {
+  // If all flags are unlocked (complete album), use full pool; otherwise filter out unlocked
+  const albumComplete = state.unlockedFlags.length >= FLAGS_DATA.length;
+  const availableFlags = albumComplete
+    ? FLAGS_DATA
+    : FLAGS_DATA.filter(f => !state.unlockedFlags.includes(f.code));
+
+  // Fallback: if filtering leaves too few flags per difficulty, use full pool
+  const usePool = availableFlags.length >= 12 ? availableFlags : FLAGS_DATA;
+
   // Pool sizes based on getLevel() thresholds: 4 for Level 1, 4 for Level 2, 4 for Level 3
-  const easyFlags = shuffleArray(FLAGS_DATA.filter(f => f.difficulty === 1)).slice(0, 4);
-  const mediumFlags = shuffleArray(FLAGS_DATA.filter(f => f.difficulty === 2)).slice(0, 4);
-  const hardFlags = shuffleArray(FLAGS_DATA.filter(f => f.difficulty === 3)).slice(0, 4);
+  const easyFlags = shuffleArray(usePool.filter(f => f.difficulty === 1)).slice(0, 4);
+  const mediumFlags = shuffleArray(usePool.filter(f => f.difficulty === 2)).slice(0, 4);
+  const hardFlags = shuffleArray(usePool.filter(f => f.difficulty === 3)).slice(0, 4);
 
   const selected = [...easyFlags, ...mediumFlags, ...hardFlags];
 
@@ -491,14 +500,9 @@ function handleTimeout() {
   const q = state.questions[state.currentIndex];
   state.responseTimes.push(getTimerForLevel(q.level));
 
-  // Highlight correct answer
+  // Disable all options
   const optionBtns = optionsContainer.querySelectorAll('.option-btn');
-  optionBtns.forEach(btn => {
-    if (btn.textContent === q.correct) {
-      btn.classList.add('correct');
-    }
-    btn.classList.add('disabled');
-  });
+  optionBtns.forEach(btn => btn.classList.add('disabled'));
 
   showFeedback(false, q.correct);
   setTimeout(nextQuestion, 1800);
@@ -527,13 +531,6 @@ function handleAnswer(answer, btnEl) {
     }
   } else {
     btnEl.classList.add('wrong');
-    // Show correct
-    const optionBtns = optionsContainer.querySelectorAll('.option-btn');
-    optionBtns.forEach(btn => {
-      if (btn.textContent === q.correct) {
-        btn.classList.add('correct');
-      }
-    });
   }
 
   // Disable all
@@ -552,7 +549,7 @@ function showFeedback(isCorrect, correctAnswer) {
     feedbackText.className = 'feedback-text correct';
   } else {
     feedbackIcon.innerHTML = '<span class="material-symbols-outlined" style="color: #ef4444;">cancel</span>';
-    feedbackText.innerHTML = `<span style="font-weight: 400;">Resposta:</span><br>${correctAnswer}`;
+    feedbackText.textContent = 'Errou!';
     feedbackText.className = 'feedback-text wrong';
   }
 }
