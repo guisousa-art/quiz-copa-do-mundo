@@ -355,15 +355,16 @@ button {
 /* Album Button (Start Screen) */
 .btn-album {
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
   gap: var(--space-sm);
-  width: 100%;
-  padding: var(--space-sm) var(--space-lg);
+  width: 75%;
+  padding: var(--space-md) var(--space-lg);
   background: transparent;
-  border: 1px dashed var(--border-option);
+  border: 2px solid #c4170c;
   color: var(--text-secondary);
-  font-size: var(--font-size-sm);
+  font-size: calc(var(--font-size-sm) * 1.15);
   font-weight: 600;
   border-radius: var(--radius-lg);
   transition: all var(--transition-base);
