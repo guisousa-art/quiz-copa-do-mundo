@@ -1000,17 +1000,33 @@ const btnStartText = btnStart.querySelector('.btn-text');
 const btnAlbumText = btnAlbum.querySelector('.btn-text');
 
 if (btnStartText && btnAlbumText) {
-  setInterval(() => {
-    btnStartText.style.opacity = '0';
-    btnAlbumText.style.opacity = '0';
-    
-    setTimeout(() => {
-      rotateIndex = (rotateIndex + 1) % startTexts.length;
-      btnStartText.textContent = startTexts[rotateIndex];
-      btnAlbumText.textContent = albumTexts[rotateIndex];
+  // Wait a bit before first rotation
+  setTimeout(() => {
+    setInterval(() => {
+      // 1. Slide up and fade out
+      btnStartText.classList.add('slide-out');
+      btnAlbumText.classList.add('slide-out');
       
-      btnStartText.style.opacity = '1';
-      btnAlbumText.style.opacity = '1';
-    }, 300); // Wait for fade out
-  }, 2500); // Rotate every 2.5 seconds
+      setTimeout(() => {
+        // 2. Change text
+        rotateIndex = (rotateIndex + 1) % startTexts.length;
+        btnStartText.textContent = startTexts[rotateIndex];
+        btnAlbumText.textContent = albumTexts[rotateIndex];
+        
+        // 3. Move instantly to bottom
+        btnStartText.classList.remove('slide-out');
+        btnAlbumText.classList.remove('slide-out');
+        btnStartText.classList.add('slide-prepare');
+        btnAlbumText.classList.add('slide-prepare');
+        
+        // Force reflow so browser applies the instant move before we remove the class
+        void btnStartText.offsetWidth;
+        void btnAlbumText.offsetWidth;
+        
+        // 4. Slide up to center and fade in
+        btnStartText.classList.remove('slide-prepare');
+        btnAlbumText.classList.remove('slide-prepare');
+      }, 300); // Wait for the 0.3s CSS transition to finish sliding out
+    }, 3000); // Rotate every 3 seconds
+  }, 1000);
 }

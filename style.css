@@ -1156,3 +1156,22 @@ button {
 .feedback-icon .material-symbols-outlined {
   font-size: inherit;
 }
+
+/* ========================================
+   ROTATOR ANIMATION
+   ======================================== */
+.rotator-text {
+  display: inline-block;
+  transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+.rotator-text.slide-out {
+  opacity: 0;
+  transform: translateY(-10px);
+}
+
+.rotator-text.slide-prepare {
+  opacity: 0;
+  transform: translateY(10px);
+  transition: none; /* Snap to bottom instantly */
+}
