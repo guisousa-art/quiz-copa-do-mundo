@@ -57,7 +57,7 @@
   --gradient-gold: linear-gradient(135deg, #c4170c 0%, #e02d1b 100%);
   --gradient-green: linear-gradient(135deg, #16a34a 0%, #15803d 100%);
   --gradient-red: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
-  --gradient-bg: linear-gradient(180deg, #ffffff 0%, #f8f8fa 50%, #f0f0f5 100%);
+  --gradient-bg: #ffffff;
 
   --border-subtle: rgba(0, 0, 0, 0.08);
   --border-option: rgba(0, 0, 0, 0.12);
@@ -542,9 +542,11 @@ button {
     transform: scale(0.85);
     opacity: 0.5;
   }
+
   60% {
     transform: scale(1.15);
   }
+
   100% {
     transform: scale(1.1);
     opacity: 1;
@@ -1064,6 +1066,7 @@ button {
     opacity: 0;
     transform: translateY(8px) scale(0.96);
   }
+
   to {
     opacity: 1;
     transform: translateY(0) scale(1);
@@ -1174,5 +1177,6 @@ button {
 .rotator-text.slide-prepare {
   opacity: 0;
   transform: translateY(10px);
-  transition: none; /* Snap to bottom instantly */
+  transition: none;
+  /* Snap to bottom instantly */
 }
