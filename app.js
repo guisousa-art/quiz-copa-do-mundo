@@ -85,6 +85,124 @@ const DISTRACTORS = [
   "Tailândia", "Omã", "Angola", "Islândia", "Finlândia"
 ];
 
+const FLAG_CONTINENTS = {
+  mx: "América do Norte",
+  za: "África",
+  kr: "Ásia",
+  cz: "Europa",
+  ca: "América do Norte",
+  ba: "Europa",
+  qa: "Ásia",
+  ch: "Europa",
+  br: "América do Sul",
+  ma: "África",
+  ht: "América do Norte",
+  "gb-sct": "Europa",
+  us: "América do Norte",
+  py: "América do Sul",
+  au: "Oceania",
+  tr: "Europa",
+  de: "Europa",
+  cw: "América do Norte",
+  ci: "África",
+  ec: "América do Sul",
+  nl: "Europa",
+  jp: "Ásia",
+  se: "Europa",
+  tn: "África",
+  be: "Europa",
+  eg: "África",
+  ir: "Ásia",
+  nz: "Oceania",
+  es: "Europa",
+  cv: "África",
+  sa: "Ásia",
+  uy: "América do Sul",
+  fr: "Europa",
+  sn: "África",
+  iq: "Ásia",
+  no: "Europa",
+  ar: "América do Sul",
+  dz: "África",
+  at: "Europa",
+  jo: "Ásia",
+  pt: "Europa",
+  cd: "África",
+  uz: "Ásia",
+  co: "América do Sul",
+  "gb-eng": "Europa",
+  hr: "Europa",
+  gh: "África",
+  pa: "América do Norte"
+};
+
+const DISTRACTOR_CONTINENTS = {
+  "Itália": "Europa",
+  "Chile": "América do Sul",
+  "Bolívia": "América do Sul",
+  "Venezuela": "América do Sul",
+  "Peru": "América do Sul",
+  "Camarões": "África",
+  "Nigéria": "África",
+  "Síria": "Ásia",
+  "China": "Ásia",
+  "Jamaica": "América do Norte",
+  "Grécia": "Europa",
+  "Mali": "África",
+  "Honduras": "América do Norte",
+  "Irlanda": "Europa",
+  "Nova Caledônia": "Oceania",
+  "Tailândia": "Ásia",
+  "Omã": "Ásia",
+  "Angola": "África",
+  "Islândia": "Europa",
+  "Finlândia": "Europa"
+};
+
+const SIMILAR_FLAG_GROUPS = [
+  ["gh", "sn", "ci", "ma", "cv", "Camarões", "Mali"],
+  ["dz", "ma", "tn", "tr", "jo", "sa", "iq", "ir", "Síria", "Omã"],
+  ["ar", "uy", "py", "ec", "co", "Venezuela", "Bolívia"],
+  ["au", "nz", "gb-sct", "gb-eng"],
+  ["se", "no", "Finlândia", "Islândia"],
+  ["fr", "nl", "be", "ci", "ir", "Itália", "Irlanda"],
+  ["at", "ca", "ch", "jp", "gb-eng"],
+  ["hr", "cz", "ba", "gb-sct"],
+  ["jp", "kr", "bd"],
+  ["us", "my", "lr", "Chile"],
+  ["mx", "it", "ir", "hu", "Bolívia"],
+  ["br", "gh", "sn", "za", "Camarões"],
+  ["de", "be", "ug", "Angola"],
+  ["es", "co", "ec", "Venezuela", "Bolívia"],
+  ["pt", "mx", "it", "ir", "Bolívia"],
+  ["pa", "cr", "cu", "py", "Chile"],
+  ["qa", "bh", "jo", "ps", "Síria"],
+  ["uz", "ar", "uy", "hn", "Honduras"],
+  ["cw", "ar", "uy", "uz", "Honduras"],
+  ["ht", "fr", "nl", "py", "Chile"],
+  ["eg", "iq", "jo", "sa", "Síria", "Omã"],
+  ["za", "br", "gh", "sn", "Camarões"],
+  ["cz", "hr", "ba", "gb-sct"],
+  ["ch", "ca", "jp", "gb-eng", "at"]
+];
+
+const NEARBY_COUNTRY_GROUPS = [
+  ["mx", "us", "ca", "pa", "ht", "cw", "Jamaica", "Honduras"],
+  ["br", "ar", "uy", "py", "co", "ec", "Chile", "Bolívia", "Peru", "Venezuela"],
+  ["gh", "sn", "ci", "cv", "ma", "Mali", "Nigéria", "Camarões"],
+  ["dz", "ma", "tn", "eg", "Mali"],
+  ["za", "cd", "Angola", "Camarões", "Nigéria"],
+  ["qa", "sa", "jo", "iq", "ir", "tr", "Síria", "Omã"],
+  ["jp", "kr", "China", "Tailândia"],
+  ["uz", "ir", "China", "Omã"],
+  ["fr", "be", "nl", "ch", "de", "at", "Itália", "Irlanda"],
+  ["es", "pt", "fr", "ma", "Itália"],
+  ["gb-eng", "gb-sct", "fr", "nl", "be", "Irlanda"],
+  ["hr", "ba", "cz", "at", "ch"],
+  ["se", "no", "Finlândia", "Islândia"],
+  ["au", "nz", "Nova Caledônia"]
+];
+
 /*
 const TRIVIA_DATA = [
   {
@@ -328,6 +446,94 @@ function showScreen(screen) {
 
 // ─── QUESTION GENERATION ────────────────────────────────────
 
+function getCountryNameByCodeOrName(codeOrName) {
+  const flag = FLAGS_DATA.find(f => f.code === codeOrName);
+  if (flag) return flag.name;
+  if (DISTRACTORS.includes(codeOrName)) return codeOrName;
+  return null;
+}
+
+function getSimilarFlagNames(item) {
+  const groups = SIMILAR_FLAG_GROUPS.filter(group => group.includes(item.code));
+  const names = groups.flatMap(group => group)
+    .filter(codeOrName => codeOrName !== item.code)
+    .map(getCountryNameByCodeOrName)
+    .filter(Boolean);
+
+  return shuffleArray(names);
+}
+
+function getNearbyCountryNames(item) {
+  const groups = NEARBY_COUNTRY_GROUPS.filter(group => group.includes(item.code));
+  const names = groups.flatMap(group => group)
+    .filter(codeOrName => codeOrName !== item.code)
+    .map(getCountryNameByCodeOrName)
+    .filter(Boolean);
+
+  return shuffleArray(names);
+}
+
+function getSameContinentNames(item) {
+  const continent = FLAG_CONTINENTS[item.code];
+  if (!continent) return [];
+
+  const teamsFromContinent = FLAGS_DATA
+    .filter(f => f.code !== item.code && FLAG_CONTINENTS[f.code] === continent)
+    .map(f => f.name);
+
+  const distractorsFromContinent = DISTRACTORS
+    .filter(name => DISTRACTOR_CONTINENTS[name] === continent);
+
+  return shuffleArray([...teamsFromContinent, ...distractorsFromContinent]);
+}
+
+function addUniqueOptions(options, candidates, correctAnswer, limit = 3) {
+  candidates.forEach(candidate => {
+    if (options.length >= limit) return;
+    if (candidate !== correctAnswer && !options.includes(candidate)) {
+      options.push(candidate);
+    }
+  });
+}
+
+function getWrongOptionsForFlag(item, level) {
+  const wrongOptions = [];
+  const similarFlags = getSimilarFlagNames(item);
+  const nearbyCountries = getNearbyCountryNames(item);
+  const sameContinent = getSameContinentNames(item);
+  const similarNearby = similarFlags.filter(name => nearbyCountries.includes(name));
+  const priorityPool = shuffleArray([
+    ...similarNearby,
+    ...nearbyCountries,
+    ...similarFlags,
+    ...nearbyCountries,
+    ...similarFlags,
+    ...sameContinent,
+    ...nearbyCountries
+  ]);
+  const otherQualifiedTeams = shuffleArray(FLAGS_DATA)
+    .filter(f => f.code !== item.code)
+    .map(f => f.name);
+  const otherDistractors = shuffleArray(DISTRACTORS);
+
+  addUniqueOptions(wrongOptions, similarNearby, item.name, 2);
+
+  if (level === 1) {
+    addUniqueOptions(wrongOptions, nearbyCountries, item.name, 2);
+    addUniqueOptions(wrongOptions, similarFlags, item.name, 3);
+  } else {
+    addUniqueOptions(wrongOptions, similarFlags, item.name, 2);
+    addUniqueOptions(wrongOptions, nearbyCountries, item.name, 3);
+  }
+
+  addUniqueOptions(wrongOptions, priorityPool, item.name, 3);
+  addUniqueOptions(wrongOptions, sameContinent, item.name, 3);
+  addUniqueOptions(wrongOptions, otherQualifiedTeams, item.name, 3);
+  addUniqueOptions(wrongOptions, otherDistractors, item.name, 3);
+
+  return wrongOptions;
+}
+
 function generateFlagQuestions() {
   // If all flags are unlocked (complete album), use full pool; otherwise filter out unlocked
   const albumComplete = state.unlockedFlags.length >= FLAGS_DATA.length;
@@ -347,18 +553,7 @@ function generateFlagQuestions() {
 
   return selected.map((item, idx) => {
     const level = getLevel(idx);
-
-    let wrongOptions = [];
-    const wrongPoolFlags = shuffleArray(FLAGS_DATA.filter(f => f.code !== item.code)).map(f => f.name);
-    const wrongPoolDistractors = shuffleArray(DISTRACTORS);
-
-    if (level === 1) {
-      wrongOptions = wrongPoolFlags.slice(0, 3);
-    } else if (level === 2) {
-      wrongOptions = [wrongPoolDistractors[0], ...wrongPoolFlags.slice(0, 2)];
-    } else { // level 3
-      wrongOptions = [...wrongPoolDistractors.slice(0, 2), wrongPoolFlags[0]];
-    }
+    const wrongOptions = getWrongOptionsForFlag(item, level);
 
     const allOptions = shuffleArray([item.name, ...wrongOptions]);
 
@@ -1006,23 +1201,23 @@ if (btnStartText && btnAlbumText) {
       // 1. Slide up and fade out
       btnStartText.classList.add('slide-out');
       btnAlbumText.classList.add('slide-out');
-      
+
       setTimeout(() => {
         // 2. Change text
         rotateIndex = (rotateIndex + 1) % startTexts.length;
         btnStartText.textContent = startTexts[rotateIndex];
         btnAlbumText.textContent = albumTexts[rotateIndex];
-        
+
         // 3. Move instantly to bottom
         btnStartText.classList.remove('slide-out');
         btnAlbumText.classList.remove('slide-out');
         btnStartText.classList.add('slide-prepare');
         btnAlbumText.classList.add('slide-prepare');
-        
+
         // Force reflow so browser applies the instant move before we remove the class
         void btnStartText.offsetWidth;
         void btnAlbumText.offsetWidth;
-        
+
         // 4. Slide up to center and fade in
         btnStartText.classList.remove('slide-prepare');
         btnAlbumText.classList.remove('slide-prepare');
