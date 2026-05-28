@@ -940,6 +940,53 @@ function showMenuItemFeedback(btn, msg, duration = 2000) {
   setTimeout(() => { span.textContent = original; }, duration);
 }
 
+function downloadBlob(blob, filename) {
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+async function createShareImageFile() {
+  const { correct, wrong, pct, avgTime } = getShareStats();
+  const { svgName, titleMsg } = getShareSvgInfo(pct);
+  const blob = await generateShareImage(correct, wrong, pct, avgTime, svgName, titleMsg);
+
+  return {
+    blob,
+    file: new File([blob], 'quiz-g1.jpg', { type: 'image/jpeg' })
+  };
+}
+
+async function shareSocialWithImage(btn, fallbackUrl) {
+  const text = getShareText();
+
+  showMenuItemFeedback(btn, 'Gerando...');
+
+  try {
+    const { blob, file } = await createShareImageFile();
+
+    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+      await navigator.share({ text, files: [file] });
+      showMenuItemFeedback(btn, 'Compartilhado! ✓');
+    } else {
+      downloadBlob(blob, 'quiz-g1.jpg');
+      await copyToClipboard(text);
+      window.open(fallbackUrl(text), '_blank');
+      showMenuItemFeedback(btn, 'Imagem baixada! ✓');
+    }
+  } catch (err) {
+    console.error(err);
+    showMenuItemFeedback(btn, 'Erro', 2000);
+  }
+
+  shareMenu.classList.add('hidden');
+}
+
 // Toggle share menu popup
 btnShare.addEventListener('click', (e) => {
   e.stopPropagation();
@@ -960,58 +1007,28 @@ window.addEventListener('keydown', (e) => {
   }
 });
 
-// WhatsApp — open with text + link
-shareWhatsApp.addEventListener('click', () => {
-  const text = getShareText();
-  const url = `https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`;
-  window.open(url, '_blank');
-  shareMenu.classList.add('hidden');
+// WhatsApp — generate image, then share on mobile or fallback to text + link
+shareWhatsApp.addEventListener('click', async () => {
+  await shareSocialWithImage(
+    shareWhatsApp,
+    (text) => `https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`
+  );
 });
 
-// Twitter / X — open with text + link
-shareTwitter.addEventListener('click', () => {
-  const text = getShareText();
-  const url = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}`;
-  window.open(url, '_blank');
-  shareMenu.classList.add('hidden');
+// Twitter / X — generate image, then share on mobile or fallback to text + link
+shareTwitter.addEventListener('click', async () => {
+  await shareSocialWithImage(
+    shareTwitter,
+    (text) => `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}`
+  );
 });
 
 // Instagram — generate image + try native share, or download + copy text
 shareInstagram.addEventListener('click', async () => {
-  const { correct, wrong, pct, avgTime } = getShareStats();
-  const { svgName, titleMsg } = getShareSvgInfo(pct);
-
-  showMenuItemFeedback(shareInstagram, 'Gerando...');
-
-  try {
-    const blob = await generateShareImage(correct, wrong, pct, avgTime, svgName, titleMsg);
-    const file = new File([blob], 'quiz-g1.jpg', { type: 'image/jpeg' });
-    const text = getShareText();
-
-    // On mobile try native share (which can target Instagram Stories/Feed)
-    if (navigator.canShare && navigator.canShare({ files: [file] })) {
-      await navigator.share({ text, files: [file] });
-      showMenuItemFeedback(shareInstagram, 'Compartilhado! ✓');
-    } else {
-      // Desktop fallback: download image + copy text
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = 'quiz-g1.jpg';
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-
-      await copyToClipboard(text);
-      showMenuItemFeedback(shareInstagram, 'Imagem baixada! ✓');
-    }
-  } catch (err) {
-    console.error(err);
-    showMenuItemFeedback(shareInstagram, 'Erro', 2000);
-  }
-
-  shareMenu.classList.add('hidden');
+  await shareSocialWithImage(
+    shareInstagram,
+    () => 'https://www.instagram.com/'
+  );
 });
 
 // Copy — copy text + link to clipboard
