@@ -916,39 +916,62 @@ function getShareSvgInfo(pct) {
   return { svgName: 'nao-desista.svg', titleMsg: 'Não desista!' };
 }
 
-function copyToClipboard(text) {
+async function copyToClipboard(text) {
   if (navigator.clipboard && navigator.clipboard.writeText) {
-    return navigator.clipboard.writeText(text);
+    try {
+      await navigator.clipboard.writeText(text);
+      return;
+    } catch (e) {
+      // Some embeds expose navigator.clipboard but block it at runtime.
+    }
   }
-  // Fallback
+
   const ta = document.createElement('textarea');
   ta.value = text;
+  ta.setAttribute('readonly', '');
   ta.style.position = 'fixed';
-  ta.style.opacity = '0';
+  ta.style.top = '-1000px';
+  ta.style.left = '-1000px';
   document.body.appendChild(ta);
   ta.focus();
   ta.select();
-  try { document.execCommand('copy'); } catch (e) { /* noop */ }
-  document.body.removeChild(ta);
-  return Promise.resolve();
+
+  let copied = false;
+  try {
+    copied = document.execCommand('copy');
+  } catch (e) {
+    copied = false;
+  } finally {
+    document.body.removeChild(ta);
+  }
+
+  if (!copied) {
+    throw new Error('Clipboard copy failed');
+  }
+}
+
+function getMenuItemDefaultText(btn) {
+  const span = btn.querySelector('span');
+  if (!span.dataset.defaultText) {
+    span.dataset.defaultText = span.textContent;
+  }
+  return span.dataset.defaultText;
+}
+
+function setMenuItemText(btn, msg) {
+  const span = btn.querySelector('span');
+  getMenuItemDefaultText(btn);
+  span.textContent = msg;
+}
+
+function resetMenuItemText(btn) {
+  const span = btn.querySelector('span');
+  span.textContent = getMenuItemDefaultText(btn);
 }
 
 function showMenuItemFeedback(btn, msg, duration = 2000) {
-  const span = btn.querySelector('span');
-  const original = span.textContent;
-  span.textContent = msg;
-  setTimeout(() => { span.textContent = original; }, duration);
-}
-
-function downloadBlob(blob, filename) {
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = filename;
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  URL.revokeObjectURL(url);
+  setMenuItemText(btn, msg);
+  setTimeout(() => { resetMenuItemText(btn); }, duration);
 }
 
 async function createShareImageFile() {
@@ -965,23 +988,36 @@ async function createShareImageFile() {
 async function shareSocialWithImage(btn, fallbackUrl) {
   const text = getShareText();
 
-  showMenuItemFeedback(btn, 'Gerando...');
+  setMenuItemText(btn, 'Gerando...');
 
   try {
-    const { blob, file } = await createShareImageFile();
+    const { file } = await createShareImageFile();
 
-    if (navigator.canShare && navigator.canShare({ files: [file] })) {
-      await navigator.share({ text, files: [file] });
+    if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
+      await navigator.share({
+        title: 'Quiz Copa do Mundo 2026',
+        text,
+        url: SHARE_URL,
+        files: [file]
+      });
+      showMenuItemFeedback(btn, 'Compartilhado! ✓');
+    } else if (navigator.share) {
+      await navigator.share({
+        title: 'Quiz Copa do Mundo 2026',
+        text,
+        url: SHARE_URL
+      });
       showMenuItemFeedback(btn, 'Compartilhado! ✓');
     } else {
-      downloadBlob(blob, 'quiz-g1.jpg');
       await copyToClipboard(text);
       window.open(fallbackUrl(text), '_blank');
-      showMenuItemFeedback(btn, 'Imagem baixada! ✓');
+      showMenuItemFeedback(btn, 'Texto copiado! ✓');
     }
   } catch (err) {
     console.error(err);
     showMenuItemFeedback(btn, 'Erro', 2000);
+  } finally {
+    setTimeout(() => { resetMenuItemText(btn); }, 2200);
   }
 
   shareMenu.classList.add('hidden');
