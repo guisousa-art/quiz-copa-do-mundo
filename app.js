@@ -922,9 +922,13 @@ function getShareStats() {
   return { total, correct, wrong, pct, avgTime };
 }
 
-function getShareText() {
+function getShareMessage() {
   const { total, correct, pct } = getShareStats();
-  return `⚽ Quiz Copa do Mundo 2026 no g1\n🏆 Acertei ${correct}/${total} (${pct}%)\nTente você também!\n${SHARE_URL}`;
+  return `⚽ Quiz Copa do Mundo 2026 no g1\n🏆 Acertei ${correct}/${total} (${pct}%)\nTente você também!`;
+}
+
+function getShareText() {
+  return `${getShareMessage()}\n${SHARE_URL}`;
 }
 
 function getShareSvgInfo(pct) {
@@ -992,6 +996,24 @@ function showMenuItemFeedback(btn, msg, duration = 2000) {
   setTimeout(() => { resetMenuItemText(btn); }, duration);
 }
 
+async function createShareImageFile() {
+  const { correct, wrong, pct, avgTime } = getShareStats();
+  const { svgName, titleMsg } = getShareSvgInfo(pct);
+  const blob = await generateShareImage(correct, wrong, pct, avgTime, svgName, titleMsg);
+
+  return new File([blob], 'quiz-g1.jpg', { type: 'image/jpeg' });
+}
+
+function canShareFile(file) {
+  if (!navigator.canShare) return false;
+
+  try {
+    return navigator.canShare({ files: [file] });
+  } catch (err) {
+    return false;
+  }
+}
+
 async function copyTextAndOpenSocial(btn, getUrl) {
   const text = getShareText();
   const openedWindow = window.open(getUrl(text), '_blank');
@@ -1015,15 +1037,25 @@ function isShareCancelError(err) {
 
 async function tryNativeShareOrOpenMenu() {
   if (!navigator.share) {
-    shareMenu.classList.toggle('hidden');
+    shareMenu.classList.remove('hidden');
     return;
   }
 
+  setMenuItemText(btnShare, 'Gerando...');
+
   try {
-    await navigator.share({
+    const file = await createShareImageFile();
+    const shareData = {
       title: 'Quiz Copa do Mundo 2026',
-      text: getShareText()
-    });
+      text: getShareMessage(),
+      url: SHARE_URL
+    };
+
+    if (canShareFile(file)) {
+      shareData.files = [file];
+    }
+
+    await navigator.share(shareData);
     shareMenu.classList.add('hidden');
   } catch (err) {
     if (isShareCancelError(err)) {
@@ -1033,6 +1065,8 @@ async function tryNativeShareOrOpenMenu() {
 
     console.error(err);
     shareMenu.classList.remove('hidden');
+  } finally {
+    resetMenuItemText(btnShare);
   }
 }
 
@@ -1072,7 +1106,7 @@ shareTwitter.addEventListener('click', async () => {
   );
 });
 
-// Instagram — copy text + open Instagram
+// Instagram — copy text/link + open app
 shareInstagram.addEventListener('click', async () => {
   const text = getShareText();
   const openedWindow = window.open('https://www.instagram.com/', '_blank');
