@@ -1022,8 +1022,7 @@ async function tryNativeShareOrOpenMenu() {
   try {
     await navigator.share({
       title: 'Quiz Copa do Mundo 2026',
-      text: getShareText(),
-      url: SHARE_URL
+      text: getShareText()
     });
     shareMenu.classList.add('hidden');
   } catch (err) {
