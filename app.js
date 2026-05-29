@@ -736,14 +736,32 @@ function handleAnswer(answer, btnEl) {
   setTimeout(nextQuestion, 1500);
 }
 
+function getFeedbackIconSvg(isCorrect) {
+  if (isCorrect) {
+    return `
+      <svg width="96" height="96" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <circle cx="12" cy="12" r="10" fill="#16a34a" opacity="0.12"/>
+        <path d="m8 12.5 2.5 2.5L16.5 9" stroke="#16a34a" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    `;
+  }
+
+  return `
+    <svg width="96" height="96" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <circle cx="12" cy="12" r="10" fill="#ef4444" opacity="0.12"/>
+      <path d="m8.5 8.5 7 7m0-7-7 7" stroke="#ef4444" stroke-width="2.4" stroke-linecap="round"/>
+    </svg>
+  `;
+}
+
 function showFeedback(isCorrect, correctAnswer) {
   feedbackOverlay.classList.remove('hidden');
   if (isCorrect) {
-    feedbackIcon.innerHTML = '<span class="material-symbols-outlined" style="color: #16a34a;">check_circle</span>';
+    feedbackIcon.innerHTML = getFeedbackIconSvg(true);
     feedbackText.textContent = 'Correto!';
     feedbackText.className = 'feedback-text correct';
   } else {
-    feedbackIcon.innerHTML = '<span class="material-symbols-outlined" style="color: #ef4444;">cancel</span>';
+    feedbackIcon.innerHTML = getFeedbackIconSvg(false);
     feedbackText.textContent = 'Errou!';
     feedbackText.className = 'feedback-text wrong';
   }
@@ -974,59 +992,56 @@ function showMenuItemFeedback(btn, msg, duration = 2000) {
   setTimeout(() => { resetMenuItemText(btn); }, duration);
 }
 
-async function createShareImageFile() {
-  const { correct, wrong, pct, avgTime } = getShareStats();
-  const { svgName, titleMsg } = getShareSvgInfo(pct);
-  const blob = await generateShareImage(correct, wrong, pct, avgTime, svgName, titleMsg);
-
-  return {
-    blob,
-    file: new File([blob], 'quiz-g1.jpg', { type: 'image/jpeg' })
-  };
-}
-
-async function shareSocialWithImage(btn, fallbackUrl) {
+async function copyTextAndOpenSocial(btn, getUrl) {
   const text = getShareText();
 
-  setMenuItemText(btn, 'Gerando...');
-
   try {
-    const { file } = await createShareImageFile();
-
-    if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
-      await navigator.share({
-        title: 'Quiz Copa do Mundo 2026',
-        text,
-        url: SHARE_URL,
-        files: [file]
-      });
-      showMenuItemFeedback(btn, 'Compartilhado! ✓');
-    } else if (navigator.share) {
-      await navigator.share({
-        title: 'Quiz Copa do Mundo 2026',
-        text,
-        url: SHARE_URL
-      });
-      showMenuItemFeedback(btn, 'Compartilhado! ✓');
-    } else {
-      await copyToClipboard(text);
-      window.open(fallbackUrl(text), '_blank');
-      showMenuItemFeedback(btn, 'Texto copiado! ✓');
-    }
+    await copyToClipboard(text);
+    window.open(getUrl(text), '_blank');
+    showMenuItemFeedback(btn, 'Copiado! ✓');
   } catch (err) {
     console.error(err);
     showMenuItemFeedback(btn, 'Erro', 2000);
-  } finally {
-    setTimeout(() => { resetMenuItemText(btn); }, 2200);
   }
 
   shareMenu.classList.add('hidden');
 }
 
-// Toggle share menu popup
-btnShare.addEventListener('click', (e) => {
+function isShareCancelError(err) {
+  return err && (
+    err.name === 'AbortError' ||
+    err.name === 'NotAllowedError'
+  );
+}
+
+async function tryNativeShareOrOpenMenu() {
+  if (!navigator.share) {
+    shareMenu.classList.toggle('hidden');
+    return;
+  }
+
+  try {
+    await navigator.share({
+      title: 'Quiz Copa do Mundo 2026',
+      text: getShareText(),
+      url: SHARE_URL
+    });
+    shareMenu.classList.add('hidden');
+  } catch (err) {
+    if (isShareCancelError(err)) {
+      shareMenu.classList.add('hidden');
+      return;
+    }
+
+    console.error(err);
+    shareMenu.classList.remove('hidden');
+  }
+}
+
+// Try native share first; fallback to the text-only menu.
+btnShare.addEventListener('click', async (e) => {
   e.stopPropagation();
-  shareMenu.classList.toggle('hidden');
+  await tryNativeShareOrOpenMenu();
 });
 
 // Close share menu on outside click
@@ -1043,28 +1058,36 @@ window.addEventListener('keydown', (e) => {
   }
 });
 
-// WhatsApp — generate image, then share on mobile or fallback to text + link
+// WhatsApp — copy text/link + open app
 shareWhatsApp.addEventListener('click', async () => {
-  await shareSocialWithImage(
+  await copyTextAndOpenSocial(
     shareWhatsApp,
     (text) => `https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`
   );
 });
 
-// Twitter / X — generate image, then share on mobile or fallback to text + link
+// Twitter / X — copy text/link + open app
 shareTwitter.addEventListener('click', async () => {
-  await shareSocialWithImage(
+  await copyTextAndOpenSocial(
     shareTwitter,
     (text) => `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}`
   );
 });
 
-// Instagram — generate image + try native share, or download + copy text
+// Instagram — copy text + open Instagram
 shareInstagram.addEventListener('click', async () => {
-  await shareSocialWithImage(
-    shareInstagram,
-    () => 'https://www.instagram.com/'
-  );
+  const text = getShareText();
+
+  try {
+    await copyToClipboard(text);
+    window.open('https://www.instagram.com/', '_blank');
+    showMenuItemFeedback(shareInstagram, 'Texto copiado! ✓');
+  } catch (err) {
+    console.error(err);
+    showMenuItemFeedback(shareInstagram, 'Erro', 2000);
+  }
+
+  setTimeout(() => { shareMenu.classList.add('hidden'); }, 1200);
 });
 
 // Copy — copy text + link to clipboard
