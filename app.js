@@ -994,14 +994,14 @@ function showMenuItemFeedback(btn, msg, duration = 2000) {
 
 async function copyTextAndOpenSocial(btn, getUrl) {
   const text = getShareText();
+  const openedWindow = window.open(getUrl(text), '_blank');
 
   try {
     await copyToClipboard(text);
-    window.open(getUrl(text), '_blank');
     showMenuItemFeedback(btn, 'Copiado! ✓');
   } catch (err) {
     console.error(err);
-    showMenuItemFeedback(btn, 'Erro', 2000);
+    showMenuItemFeedback(btn, openedWindow ? 'Aberto' : 'Erro', 2000);
   }
 
   shareMenu.classList.add('hidden');
@@ -1009,8 +1009,7 @@ async function copyTextAndOpenSocial(btn, getUrl) {
 
 function isShareCancelError(err) {
   return err && (
-    err.name === 'AbortError' ||
-    err.name === 'NotAllowedError'
+    err.name === 'AbortError'
   );
 }
 
@@ -1077,14 +1076,14 @@ shareTwitter.addEventListener('click', async () => {
 // Instagram — copy text + open Instagram
 shareInstagram.addEventListener('click', async () => {
   const text = getShareText();
+  const openedWindow = window.open('https://www.instagram.com/', '_blank');
 
   try {
     await copyToClipboard(text);
-    window.open('https://www.instagram.com/', '_blank');
     showMenuItemFeedback(shareInstagram, 'Texto copiado! ✓');
   } catch (err) {
     console.error(err);
-    showMenuItemFeedback(shareInstagram, 'Erro', 2000);
+    showMenuItemFeedback(shareInstagram, openedWindow ? 'Aberto' : 'Erro', 2000);
   }
 
   setTimeout(() => { shareMenu.classList.add('hidden'); }, 1200);
