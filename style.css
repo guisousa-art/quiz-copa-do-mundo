@@ -458,7 +458,7 @@ button {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: var(--space-xs);
+  gap: 12px;
   padding: var(--space-sm);
   border-radius: var(--radius-md);
   border: 2px solid transparent;
@@ -509,15 +509,14 @@ button {
 }
 
 .sticker-name {
-  font-size: 0.65rem;
+  font-size: 0.85rem;
   font-weight: 600;
   color: var(--text-secondary);
   text-align: center;
   line-height: 1.2;
   width: 100%;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  overflow-wrap: anywhere;
+  white-space: normal;
 }
 
 .sticker-item.unlocked .sticker-name {

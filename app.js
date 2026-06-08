@@ -1217,6 +1217,22 @@ preloadFlags();
 
 // ─── ALBUM ──────────────────────────────────────────────────
 
+function appendAlbumCountryName(el, countryName) {
+  const match = countryName.match(/\s+(de|da|do)\s+/i);
+  if (!match) {
+    el.textContent = countryName;
+    return;
+  }
+
+  const breakIndex = match.index;
+  const firstLine = countryName.slice(0, breakIndex);
+  const secondLine = countryName.slice(breakIndex + 1);
+
+  el.appendChild(document.createTextNode(firstLine));
+  el.appendChild(document.createElement('br'));
+  el.appendChild(document.createTextNode(secondLine));
+}
+
 function renderAlbum() {
   albumGrid.innerHTML = '';
 
@@ -1271,7 +1287,7 @@ function renderAlbum() {
 
       const name = document.createElement('span');
       name.className = 'sticker-name';
-      name.textContent = flag.name;
+      appendAlbumCountryName(name, flag.name);
 
       item.appendChild(box);
       item.appendChild(name);
