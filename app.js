@@ -904,7 +904,7 @@ btnRestart.addEventListener('click', () => {
 });
 
 // Share — Menu Popup & Social Sharing
-const SHARE_URL = 'https://g1.globo.com/quiz-copa-2026';
+const SHARE_URL = 'https://g1.globo.com/educacao/noticia/2026/06/11/copa-do-mundo-2026-voce-conhece-as-bandeiras-de-todas-as-selecoes-descubra-no-quiz.ghtml';
 const shareMenu = $('#share-menu');
 const shareWhatsApp = $('#share-whatsapp');
 const shareTwitter = $('#share-twitter');
